@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>rot13</title>
+  </head>
+  <body>
+    <h1>Enter some text to Rot13</h1>
+    <form method="post">
+      <textarea type="text" name="to_shift" placeholder="Enter text to rot13" rows="14" cols="40">{{text | safe}}</textarea>
+      <br>
+      <button type="submit">Submit</button>
+
+    </form>
+  </body>
+</html>
