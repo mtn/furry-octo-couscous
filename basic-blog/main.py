@@ -22,8 +22,7 @@ class Handler(webapp2.RequestHandler):
 class Posts(db.Model):
     subject = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
-    created = db.DateTimeProperty(auto_now_add = True)
-    last_modified = db.DateTimeProperty(auto_now = True)
+    created = db.DateProperty(auto_now_add = True)
 
 class MainPage(Handler):
     def render_main(self):

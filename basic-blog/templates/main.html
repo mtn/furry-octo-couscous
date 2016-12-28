@@ -1,8 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>this is a page</h1>
 {% for post in posts %}
-  <h2>{{post.subject}}</h2>
+  <div class="inline-div">
+    <h2 style="margin-bottom:0">{{post.subject}}</h2>
+  </div>
+  <div style="text-align:right" class="inline-div">
+      <span class="post-created">{{post.created}}</span>
+  </div>
+  <hr>
+  <div class="post-content">
+    <p>{{post.content}}</p>
+  </div>
 {% endfor %}
 {% endblock %}

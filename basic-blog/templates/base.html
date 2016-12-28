@@ -10,16 +10,27 @@
         font-size: 32px;
         margin-bottom: 10px;
       }
+      .banner-link {
+        text-decoration: none;
+        color:inherit;
+      }
       .error {
         color:red;
       }
       .newpost-subtitle {
         margin-top: 20px;
       }
+      .inline-div {
+        display: inline-block;
+        width:49%;
+      }
+      .post-created {
+        color: grey;
+      }
     </style>
   </head>
   <body>
-      <header>Basic Blog</header>
+      <header><a class="banner-link" href="base.html">Basic Blog</a></header>
       <hr>
       {% block content %}
       {% endblock %}
