@@ -25,13 +25,9 @@ class Posts(db.Model):
     created = db.DateProperty(auto_now_add = True)
 
 class MainPage(Handler):
-    def render_main(self):
-        posts = db.GqlQuery("SELECT * FROM Posts "
-                            "ORDER BY created DESC")
-        self.render("main.html", posts=posts)
-
     def get(self):
-        self.render_main()
+        posts = db.GqlQuery("select * from Posts order by created desc limit 10")
+        self.render("main.html", posts=posts)
 
 class NewPost(Handler):
     def render_newpage(self, subject = "", post = "", error = ""):
@@ -48,7 +44,7 @@ class NewPost(Handler):
         if subject and post:
             a = Posts(subject=subject, content=post)
             a.put()
-            # redirect to new post page
+            # TODO redirect to new post permalink
         else:
             error = "Please provide both a subject and a post!"
             self.render_newpage(subject,post,error)
