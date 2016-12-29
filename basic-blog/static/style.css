@@ -4,7 +4,7 @@ header {
   font-size: 32px;
   margin-bottom: 10px;
 }
-.banner-link {
+a {
   text-decoration: none;
   color:inherit;
 }

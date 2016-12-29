@@ -44,12 +44,23 @@ class NewPost(Handler):
         if subject and post:
             a = Posts(subject=subject, content=post)
             a.put()
-            # TODO redirect to new post permalink
+            self.redirect('/%s' % str(a.key().id()))
         else:
             error = "Please provide both a subject and a post!"
             self.render_newpage(subject,post,error)
 
+class PostPage(Handler):
+    def get(self, post_id):
+        key = db.Key.from_path('Posts', int(post_id))
+        post = db.get(key)
+
+        if not post:
+            self.error(404)
+            return
+        self.render("permalink.html", post=post)
+
 app = webapp2.WSGIApplication([('/', MainPage),
                                ('/newpost', NewPost),
+                               ('/([0-9]+)', PostPage)
                               ],
                               debug = True)
