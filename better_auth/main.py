@@ -118,10 +118,9 @@ class Signup(Handler):
             else:
                 b = Users.register(username, password, email)
                 b.put()
-
                 self.login(b)
 
-class Login(Signup):
+class Login(Handler):
     def get(self):
         self.render("login.html")
 
@@ -138,13 +137,19 @@ class Login(Signup):
         else:
             self.render("login.html", name_err="Username didn't exist in database")
 
+class Logout(Handler):
+    def get(self):
+        self.logout()
+        self.redirect('/signup')
+
 class Main(Handler):
     def get(self):
-        self.response.write("main page")
+        self.response.write("/signup, /login, /logout")
 
 app = webapp2.WSGIApplication([('/', Main),
                                ('/signup', Signup),
-                               ('/login', Login)
+                               ('/login', Login),
+                               ('/logout', Logout)
                                # ('/welcome', Welcome)
                               ],
                               debug = True)
