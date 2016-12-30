@@ -4,6 +4,7 @@ import jinja2
 import re
 import hashlib
 import hmac
+import random
 
 from string import letters
 from google.appengine.ext import db
@@ -11,6 +12,8 @@ from google.appengine.ext import db
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
                                autoescape = True)
+
+secret = 'secret' # :P
 
 def make_salt(length = 5):
     return ''.join(random.choice(letters) for x in xrange(length))
@@ -21,9 +24,12 @@ def make_pw_hash(password, salt = None):
     h = hashlib.sha256(password + salt).hexdigest()
     return '%s,%s' % (salt, h)
 
-def valid_pw(name, password, h):
+def valid_pw(password, h):
     salt = h.split(',')[0]
-    return h == make_pw_hash(name, password, salt)
+    return h == make_pw_hash(password, salt)
+
+def make_secure_val(val):
+    return '%s|%s' % (val, hmac.new(secret, val).hexdigest())
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -35,6 +41,18 @@ class Handler(webapp2.RequestHandler):
 
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
+
+    def set_secure_cookie(self, name, val):
+        cookie_val = make_secure_val(val)
+        self.response.headers.add_header(
+            'Set-Cookie',
+            '%s=%s; Path=/' % (name, cookie_val))
+
+    def login(self, user):
+        self.set_secure_cookie('user_id', str(user.key().id()))
+
+    def logout(self):
+        self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
 
 class Users(db.Model):
     username = db.StringProperty(required = True)
@@ -50,14 +68,14 @@ class Users(db.Model):
 
     @classmethod
     def get_user_by_name(cls, username):
-        a = Users.all().filter('username=',username)
+        a = Users.all().filter('username=',username).get()
         return a
 
-    def login(self, user):
-        self.set_secure_cookie('user_id', str(user.key().id()))
-
-    def logout(self):
-        self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
+    @classmethod
+    def login(cls, name, pw):
+        a = cls.by_name(name)
+        if a and valid_pw(name, pw, a.passhash):
+            return a
 
 class Signup(Handler):
     USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
@@ -93,7 +111,7 @@ class Signup(Handler):
                          match_err = match_err,
                          email_err = email_err)
         else:
-
+            a = Users.get_user_by_name(username)
             if a:
                 self.render("signup.html", name_err = "That username already exists")
             else:
@@ -103,12 +121,30 @@ class Signup(Handler):
                 self.login(b)
                 self.redirect('/')
 
+class Login(Signup):
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        username = self.request.get('username')
+        password = self.request.get('password')
+
+        a = Users.get_user_by_name(username)
+        if a:
+            if valid_pw(password, a.passhash):
+                self.login(a)
+            else:
+                self.render("login.html", pass_err="Incorrect password")
+        else:
+            self.render("login.html", name_err="Username didn't exist in database")
+
 class Main(Handler):
     def get(self):
         self.response.write("main page")
 
 app = webapp2.WSGIApplication([('/', Main),
-                               ('/signup', Signup)
+                               ('/signup', Signup),
+                               ('/login', Login)
                                # ('/welcome', Welcome)
                               ],
                               debug = True)
