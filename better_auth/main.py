@@ -60,7 +60,7 @@ class Users(db.Model):
     email = db.StringProperty()
 
     @classmethod
-    def register(cls, username, password, email):
+    def register(cls, username, password, email=None):
         passhash = make_pw_hash(password)
         return Users(username=username,
                      passhash=passhash,
@@ -68,7 +68,8 @@ class Users(db.Model):
 
     @classmethod
     def get_user_by_name(cls, username):
-        a = Users.all().filter('username=',username).get()
+        # a = Users.all().filter('username=',username).get()
+        a = db.GqlQuery("select * from Users where username=:1", username)
         return a
 
     @classmethod
@@ -111,7 +112,7 @@ class Signup(Handler):
                          match_err = match_err,
                          email_err = email_err)
         else:
-            a = Users.get_user_by_name(username)
+            a = Users.get_user_by_name(username).get()
             if a:
                 self.render("signup.html", name_err = "That username already exists")
             else:
@@ -119,7 +120,6 @@ class Signup(Handler):
                 b.put()
 
                 self.login(b)
-                self.redirect('/')
 
 class Login(Signup):
     def get(self):
@@ -129,7 +129,7 @@ class Login(Signup):
         username = self.request.get('username')
         password = self.request.get('password')
 
-        a = Users.get_user_by_name(username)
+        a = Users.get_user_by_name(username).get()
         if a:
             if valid_pw(password, a.passhash):
                 self.login(a)
