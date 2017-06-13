@@ -20,14 +20,14 @@ const PADDLE_HEIGHT = 100;
 const PADDLE_WIDTH = 10;
 
 function calculateMousePosition(evt) {
-	var rect = canvas.getBoundingClientRect();
-	var root = document.documentElement;
-	var mouseX = evt.clientX - rect.left - root.scrollLeft;
-	var mouseY = evt.clientY - rect.top - root.scrollTop;
-	return {
-		x:mouseX,
-		y:mouseY
-	};
+    var rect = canvas.getBoundingClientRect();
+    var root = document.documentElement;
+    var mouseX = evt.clientX - rect.left - root.scrollLeft;
+    var mouseY = evt.clientY - rect.top - root.scrollTop;
+    return {
+        x:mouseX,
+        y:mouseY
+    };
 }
 
 window.onload = function(){
@@ -46,13 +46,13 @@ window.onload = function(){
       computerScore = 0;
       dispWin = false;
     }
-  })
+  });
 
   canvas.addEventListener('mousemove',function(evt){
     var mousePos = calculateMousePosition(evt);
     paddle1Y = mousePos.y - PADDLE_HEIGHT/2;
-  })
-}
+  });
+};
 
 function ballReset(){
   if(playerScore >= WINNING_SCORE || computerScore >= WINNING_SCORE){
@@ -77,10 +77,11 @@ function move(){
   ballX += ballSpeedX;
   ballY += ballSpeedY;
 
+    var deltaY;
   if(ballX > canvas.width){
     if(ballY > paddle2Y && ballY < paddle2Y+PADDLE_HEIGHT){
       ballSpeedX = -ballSpeedX;
-      var deltaY = ballY - paddle2Y+PADDLE_HEIGHT/2;
+      deltaY = ballY - paddle2Y+PADDLE_HEIGHT/2;
       ballSpeedY = deltaY*0.3;
     }
     else{
@@ -91,7 +92,7 @@ function move(){
   else if(ballX <= 0){
     if(ballY > paddle1Y && ballY < paddle1Y+PADDLE_HEIGHT){
       ballSpeedX = -ballSpeedX;
-      var deltaY = ballY - paddle1Y+PADDLE_HEIGHT/2;
+      deltaY = ballY - paddle1Y+PADDLE_HEIGHT/2;
       ballSpeedY = deltaY*0.3;
     }
     else{
@@ -129,13 +130,14 @@ function drawMidline(){
 }
 
 function drawCircle(centerX,centerY,radius,color) {
-	canvasContext.fillStyle = color;
-	canvasContext.beginPath();
-	canvasContext.arc(centerX, centerY, radius, 0,Math.PI*2,true);
-	canvasContext.fill();
+    canvasContext.fillStyle = color;
+    canvasContext.beginPath();
+    canvasContext.arc(centerX, centerY, radius, 0,Math.PI*2,true);
+    canvasContext.fill();
 }
 
 function drawRect(leftX,topY,width,height,color){
   canvasContext.fillStyle = color;
   canvasContext.fillRect(leftX,topY,width,height);
 }
+

@@ -2,10 +2,13 @@ var canvas;
 var canvasContext;
 
 var ballX = 75, ballY = 75;
-var ballSpeedX = 2, ballSpeedY = 2;
+var INIT_BALLSPEEDX = 5;
+var INIT_BALLSPEEDY = 5;
+var ballSpeedX = INIT_BALLSPEEDX, ballSpeedY = INIT_BALLSPEEDY;
 
-const PADDLE_WIDTH = 200, PADDLE_HEIGHT = 20, PADDLE_OFFSET = 5;
+var PADDLE_WIDTH = 200, PADDLE_HEIGHT = 10, PADDLE_OFFSET = 5;
 var paddleX;
+var deltaX;
 
 window.onload = function(){
     canvas = document.getElementById('gameCanvas');
@@ -18,19 +21,35 @@ window.onload = function(){
 
     var framesPerSecond = 30;
     setInterval(function(){
-        move();
+        moveBall();
         render();
     },1000/framesPerSecond);
 };
 
-function move(){
+function moveBall(){
     if(ballX > canvas.width || ballX < 0)
         ballSpeedX *= -1;
-    if(ballY > canvas.height || ballY < 0)
+    if(ballY < PADDLE_OFFSET+PADDLE_HEIGHT){
+        if(ballX > paddleX && ballX < paddleX+PADDLE_WIDTH){
+          ballSpeedX = -ballSpeedX;
+          deltaX = ballX - paddleX+PADDLE_WIDTH/2;
+          ballSpeedX = deltaX*0.3;
+        }
+        else
+            ballReset();
+    }
+    if(ballY > canvas.height)
         ballSpeedY *= -1;
 
     ballX += ballSpeedX;
     ballY += ballSpeedY;
+}
+
+function ballReset(){
+    ballSpeedY = INIT_BALLSPEEDY;
+    ballSpeedX = INIT_BALLSPEEDX;
+    ballX = canvas.width/2;
+    ballY = canvas.height/2;
 }
 
 function render(){
@@ -56,7 +75,8 @@ function drawCircle(color,posX,posY,radius){
 }
 
 function getMousePos(evt){
-    var rect = canvas.getBoundingClientRect(), root = document.documentElement;
+    var rect = canvas.getBoundingClientRect();
+    var  root = document.documentElement;
 
     var mouseX = evt.clientX - rect.left - root.scrollLeft;
     var mouseY = evt.clientY - rect.top - root.scrollTop;
