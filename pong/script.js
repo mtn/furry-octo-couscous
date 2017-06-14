@@ -1,3 +1,5 @@
+/*jshint esversion: 6 */
+
 var canvas;
 var canvasContext;
 var ballX = 50;
@@ -10,6 +12,7 @@ var computerScore = 0;
 
 var paddle1Y = 250;
 var paddle2Y = 250;
+var paddleCenter;
 
 var dispWin = false;
 
@@ -77,11 +80,12 @@ function move(){
   ballX += ballSpeedX;
   ballY += ballSpeedY;
 
-    var deltaY;
+  var deltaY;
   if(ballX > canvas.width){
     if(ballY > paddle2Y && ballY < paddle2Y+PADDLE_HEIGHT){
       ballSpeedX = -ballSpeedX;
-      deltaY = ballY - paddle2Y+PADDLE_HEIGHT/2;
+      paddleCenter = paddle2Y+PADDLE_HEIGHT/2;
+      deltaY = ballY - paddleCenter;
       ballSpeedY = deltaY*0.3;
     }
     else{
@@ -92,7 +96,8 @@ function move(){
   else if(ballX <= 0){
     if(ballY > paddle1Y && ballY < paddle1Y+PADDLE_HEIGHT){
       ballSpeedX = -ballSpeedX;
-      deltaY = ballY - paddle1Y+PADDLE_HEIGHT/2;
+      paddleCenter = paddle1Y + PADDLE_HEIGHT/2;
+      deltaY = ballY - paddleCenter;
       ballSpeedY = deltaY*0.3;
     }
     else{
