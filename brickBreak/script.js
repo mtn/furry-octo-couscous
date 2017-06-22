@@ -2,8 +2,8 @@
 
 var canvas, canvasContext;
 
-const BALLSPEEDX_INIT = 10;
-const BALLSPEEDY_INIT = 10;
+const BALLSPEEDX_INIT = 5;
+const BALLSPEEDY_INIT = 7;
 var ballX=75;
 var ballY=75;
 var ballSpeedX = BALLSPEEDX_INIT;
@@ -11,19 +11,17 @@ var ballSpeedY = BALLSPEEDY_INIT;
 
 const BRICK_W = 100;
 const BRICK_H = 50;
-const BRICK_COUNT = 4;
-const BRICK_ROWS = 2;
-const BRICK_COLS = 2;
+const BRICK_COUNT = 8;
 const BRICK_OFFSET = 2;
-var brickGrid = new Array(BRICK_ROWS*BRICK_COLS);
+var brickGrid = new Array(BRICK_COUNT);
 
 const PADDLE_WIDTH = 100;
 const PADDLE_THICKNESS = 10;
 const PADDLE_DIST_FROM_EDGE = 60;
 var paddleX = 400;
 
-var mouseX;
-var mouseY;
+var mouseX = 0;
+var mouseY = 0;
 
 function updateMousePos(evt){
     var rect = canvas.getBoundingClientRect();
@@ -42,8 +40,8 @@ window.onload = function(){
 
     var framesPerSecond = 30;
     setInterval(function() {
-        render();
         move();
+        render();
     },1000/framesPerSecond);
 
     canvas.addEventListener('mousemove',updateMousePos);
@@ -53,8 +51,6 @@ window.onload = function(){
 function ballReset(){
     ballX = canvas.width/2;
     ballY = canvas.height/2;
-    ballSpeedX = BALLSPEEDX_INIT;
-    ballSpeedY = BALLSPEEDY_INIT;
 }
 
 function render(){
@@ -72,7 +68,6 @@ function render(){
     colorText(mouseBrickX+","+mouseBrickY,mouseX,mouseY,'yellow');
 
     drawBricks();
-
 }
 
 function move(){
@@ -85,8 +80,9 @@ function move(){
         ballSpeedX *= -1;
     if(ballY < 0)
         ballSpeedY *= -1;
-    else if(ballY > canvas.height)
+    else if(ballY > canvas.height){
         ballReset();
+    }
 
     var paddleTopEdgeY = canvas.height - PADDLE_DIST_FROM_EDGE;
     var paddleBottomEdgeY = paddleTopEdgeY + PADDLE_THICKNESS;
