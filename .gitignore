@@ -1,3 +1,4 @@
 *.pyc
 debug.html
 *.swp
+.DS_Store
