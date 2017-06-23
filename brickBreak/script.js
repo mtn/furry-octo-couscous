@@ -95,46 +95,45 @@ function isAtBrickPos(col,row){
     }
 }
 
-function checkCollision(){
-    var ballBrickCol = Math.floor(ballX/BRICK_W);
-    var ballBrickRow = Math.floor(ballY/BRICK_H);
-    var arrInd = getInd(ballBrickCol,ballBrickRow);
+function checkCollision() {
+    var ballBrickCol = Math.floor(ballX / BRICK_W);
+    var ballBrickRow = Math.floor(ballY / BRICK_H);
+    var brickIndexUnderBall = getInd(ballBrickCol, ballBrickRow);
 
     if(ballBrickCol >= 0 && ballBrickCol < BRICK_COLS &&
-       ballBrickRow >= 0 && ballBrickRow < BRICK_ROWS){
+        ballBrickRow >= 0 && ballBrickRow < BRICK_ROWS) {
 
-        if(isAtBrickPos(ballBrickCol,ballBrickRow)){
-            brickGrid[arrInd] = false;
+        if(isAtBrickPos( ballBrickCol,ballBrickRow )) {
+            brickGrid[brickIndexUnderBall] = false;
             bricksLeft--;
             console.log(bricksLeft);
 
             var prevBallX = ballX - ballSpeedX;
             var prevBallY = ballY - ballSpeedY;
-            var prevBrickCol = Math.floor(prevBallX/BRICK_W);
-            var prevBrickRow = Math.floor(prevBallY/BRICK_H);
+            var prevBrickCol = Math.floor(prevBallX / BRICK_W);
+            var prevBrickRow = Math.floor(prevBallY / BRICK_H);
 
-            var bothFailed = true;
+            var bothTestsFailed = true;
 
-            if(prevBrickCol != ballBrickCol){
-                if(isAtBrickPos(prevBrickCol,prevBrickRow) === false){
+            if(prevBrickCol != ballBrickCol) {
+                if(isAtBrickPos(prevBrickCol, ballBrickRow) === false) {
                     ballSpeedX *= -1;
-                    bothFailed = false;
+                    bothTestsFailed = false;
                 }
             }
-
-            if(prevBrickRow != ballBrickRow){
-                if(getInd(ballBrickCol,prevBrickRow) === false){
+            if(prevBrickRow != ballBrickRow) {
+                if(isAtBrickPos(ballBrickCol, prevBrickRow) === false) {
                     ballSpeedY *= -1;
-                    bothFailed = false;
+                    bothTestsFailed = false;
                 }
             }
 
-            if(bothFailed){
+            if(bothTestsFailed) { // armpit case, prevents ball from going through
                 ballSpeedX *= -1;
                 ballSpeedY *= -1;
             }
-        }
 
+        }
     }
 }
 
@@ -161,13 +160,11 @@ function updatePaddle(){
 }
 
 function move(){
-
     ballMove();
 
     checkCollision();
 
     updatePaddle();
-
 }
 
 function resetBricks(){
