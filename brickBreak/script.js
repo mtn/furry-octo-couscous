@@ -4,24 +4,26 @@ var canvas, canvasContext;
 
 const BALLSPEEDX_INIT = 5;
 const BALLSPEEDY_INIT = 7;
-var ballX=75;
-var ballY=75;
+var ballX=200;
+var ballY=600;
 var ballSpeedX = BALLSPEEDX_INIT;
 var ballSpeedY = BALLSPEEDY_INIT;
 
-const BRICK_W = 100;
-const BRICK_H = 50;
-const BRICK_COUNT = 8;
+const BRICK_W = 80;
+const BRICK_H = 20;
+const BRICK_COLS = 10;
+const BRICK_ROWS = 14;
 const BRICK_OFFSET = 2;
-var brickGrid = new Array(BRICK_COUNT);
+var brickGrid = new Array(BRICK_COLS*BRICK_ROWS);
+var bricksLeft;
 
 const PADDLE_WIDTH = 100;
 const PADDLE_THICKNESS = 10;
 const PADDLE_DIST_FROM_EDGE = 60;
 var paddleX = 400;
 
-var mouseX = 0;
-var mouseY = 0;
+var mouseX;
+var mouseY;
 
 function updateMousePos(evt){
     var rect = canvas.getBoundingClientRect();
@@ -63,14 +65,10 @@ function render(){
     // Draw the paddle
     drawRect(paddleX,canvas.height-PADDLE_DIST_FROM_EDGE,PADDLE_WIDTH,PADDLE_THICKNESS,'white');
 
-    mouseBrickX = mouseX/BRICK_W;
-    mouseBrickY = mouseY/BRICK_H;
-    colorText(mouseBrickX+","+mouseBrickY,mouseX,mouseY,'yellow');
-
     drawBricks();
 }
 
-function move(){
+function ballMove(){
     ballX += ballSpeedX;
     ballY += ballSpeedY;
 
@@ -82,8 +80,65 @@ function move(){
         ballSpeedY *= -1;
     else if(ballY > canvas.height){
         ballReset();
+        resetBricks();
     }
+}
 
+function isAtBrickPos(col,row){
+    if(col >= 0 && col < BRICK_COLS &&
+       row >= 0 && row < BRICK_ROWS){
+
+        var brickInd = getInd(col,row);
+        return brickGrid[brickInd];
+    } else{
+        return false;
+    }
+}
+
+function checkCollision(){
+    var ballBrickCol = Math.floor(ballX/BRICK_W);
+    var ballBrickRow = Math.floor(ballY/BRICK_H);
+    var arrInd = getInd(ballBrickCol,ballBrickRow);
+
+    if(ballBrickCol >= 0 && ballBrickCol < BRICK_COLS &&
+       ballBrickRow >= 0 && ballBrickRow < BRICK_ROWS){
+
+        if(isAtBrickPos(ballBrickCol,ballBrickRow)){
+            brickGrid[arrInd] = false;
+            bricksLeft--;
+            console.log(bricksLeft);
+
+            var prevBallX = ballX - ballSpeedX;
+            var prevBallY = ballY - ballSpeedY;
+            var prevBrickCol = Math.floor(prevBallX/BRICK_W);
+            var prevBrickRow = Math.floor(prevBallY/BRICK_H);
+
+            var bothFailed = true;
+
+            if(prevBrickCol != ballBrickCol){
+                if(isAtBrickPos(prevBrickCol,prevBrickRow) === false){
+                    ballSpeedX *= -1;
+                    bothFailed = false;
+                }
+            }
+
+            if(prevBrickRow != ballBrickRow){
+                if(getInd(ballBrickCol,prevBrickRow) === false){
+                    ballSpeedY *= -1;
+                    bothFailed = false;
+                }
+            }
+
+            if(bothFailed){
+                ballSpeedX *= -1;
+                ballSpeedY *= -1;
+            }
+        }
+
+    }
+}
+
+function updatePaddle(){
     var paddleTopEdgeY = canvas.height - PADDLE_DIST_FROM_EDGE;
     var paddleBottomEdgeY = paddleTopEdgeY + PADDLE_THICKNESS;
     var paddleLeftEdgeX = paddleX;
@@ -98,21 +153,45 @@ function move(){
 
         var paddleCenterX = paddleX + PADDLE_WIDTH/2;
         var ballDistFromCenter = ballX - paddleCenterX;
-
         ballSpeedX = ballDistFromCenter * 0.35;
+
+        if(bricksLeft === 0)
+            resetBricks();
     }
+}
+
+function move(){
+
+    ballMove();
+
+    checkCollision();
+
+    updatePaddle();
+
 }
 
 function resetBricks(){
-    for(var i = 0; i < BRICK_COUNT; i++){
+    bricksLeft = 0;
+    var i;
+    for(i = 0; i < BRICK_COLS * 3; i++){
+        brickGrid[i] = false;
+    }
+    for(; i < BRICK_COLS * BRICK_ROWS; i++){
         brickGrid[i] = true;
+        bricksLeft++;
     }
 }
 
+function getInd(col,row){
+    return BRICK_COLS*row+col;
+}
+
 function drawBricks(){
-    for(var i = 0; i < BRICK_COUNT; i++){
-        if(brickGrid[i])
-            drawRect(BRICK_W*i,0,BRICK_W-BRICK_OFFSET,BRICK_H-BRICK_OFFSET,'blue');
+    for(var row = 0; row < BRICK_ROWS; row++){
+        for(var col = 0; col < BRICK_COLS; col++){
+            if(brickGrid[getInd(col,row)])
+                drawRect(BRICK_W*col,BRICK_H*row,BRICK_W-BRICK_OFFSET,BRICK_H-BRICK_OFFSET,'blue');
+        }
     }
 }
 
