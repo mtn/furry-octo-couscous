@@ -1,12 +1,15 @@
-// jshint esversion: 6
-
 var carPic = document.createElement("img");
 var carPicLoaded = false;
 
-var ballX = 75;
-var ballY = 75;
-var ballSpeedX = 5;
-var ballSpeedY = 7;
+var carX = 75;
+var carY = 75;
+var carAng = 0;
+var carSpeed = 2;
+
+const GROUNDSPEED_DECAY_MULT = 0.94;
+const DRIVE_POWER = 0.5;
+const REVERSE_POWER = 0.2;
+const TURN_RATE = 0.03;
 
 const TRACK_W = 40;
 const TRACK_H = 40;
@@ -28,8 +31,21 @@ var trackGrid = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                  1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1,
                  1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1,
                  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+const TRACK_ROAD = 0;
+const TRACK_WALL = 1;
+const TRACK_PLAYER_START = 2;
 
 var canvas, canvasContext;
+
+const KEY_LEFT = 37;
+const KEY_UP = 38;
+const KEY_RIGHT = 39;
+const KEY_DOWN = 40;
+
+var keyHeld_Gas = false;
+var keyHeld_Reverse = false;
+var keyHeld_TurnLeft= false;
+var keyHeld_TurnRight = false;
 
 var mouseX = 0;
 var mouseY = 0;
@@ -40,12 +56,42 @@ function updateMousePos(evt) {
 
     mouseX = evt.clientX - rect.left - root.scrollLeft;
     mouseY = evt.clientY - rect.top - root.scrollTop;
+}
 
-    // cheat / hack to test ball in any position
-    /*ballX = mouseX;
-    ballY = mouseY;
-    ballSpeedX = 4;
-    ballSpeedY = -4;*/
+function keyPressed(evt) {
+    switch(evt.keyCode){
+        case KEY_LEFT:
+            keyHeld_TurnLeft = true;
+            break;
+        case KEY_RIGHT:
+            keyHeld_TurnRight = true;
+            break;
+        case KEY_DOWN:
+            keyHeld_Reverse = true;
+            break;
+        case KEY_UP:
+            keyHeld_Gas = true;
+            break;
+    }
+    console.log("Key pressed: "+evt.keyCode);
+}
+
+function keyReleased(evt) {
+    switch(evt.keyCode){
+        case KEY_LEFT:
+            keyHeld_TurnLeft = false;
+            break;
+        case KEY_RIGHT:
+            keyHeld_TurnRight = false;
+            break;
+        case KEY_DOWN:
+            keyHeld_Reverse = false;
+            break;
+        case KEY_UP:
+            keyHeld_Gas = false;
+            break;
+    }
+    console.log("Key pressed: "+evt.keyCode);
 }
 
 window.onload = function() {
@@ -57,12 +103,15 @@ window.onload = function() {
 
     canvas.addEventListener('mousemove', updateMousePos);
 
-    carPic.onload = function(){
+    document.addEventListener('keydown', keyPressed);
+    document.addEventListener('keyup', keyReleased);
+
+    carPic.onload = function() {
         carPicLoaded = true;
     };
     carPic.src = "player1car.png";
 
-    ballReset();
+    carReset();
 };
 
 function updateAll() {
@@ -70,39 +119,41 @@ function updateAll() {
     drawAll();
 }
 
-function ballReset() {
+function carReset() {
     for(var eachRow=0;eachRow<TRACK_ROWS;eachRow++) {
         for(var eachCol=0;eachCol<TRACK_COLS;eachCol++) {
             var arrayIndex = rowColToArrayIndex(eachCol, eachRow);
-            if(trackGrid[arrayIndex] == 2) {
-                trackGrid[arrayIndex] = 0;
-                ballX = eachCol * TRACK_W + TRACK_W/2;
-                ballY = eachRow * TRACK_H + TRACK_H/2;
+            if(trackGrid[arrayIndex] == TRACK_PLAYER_START) {
+                trackGrid[arrayIndex] = TRACK_ROAD;
+                carAng = -Math.PI/2;
+                carX = eachCol * TRACK_W + TRACK_W/2;
+                carY = eachRow * TRACK_H + TRACK_H/2;
             }
         }
     }
 }
 
-function ballMove() {
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
+function carMove() {
+    carSpeed *= GROUNDSPEED_DECAY_MULT;
 
-    if(ballX < 0 && ballSpeedX < 0.0) { //left
-        ballSpeedX *= -1;
+    if(keyHeld_Gas){
+        carSpeed += DRIVE_POWER;
     }
-    if(ballX > canvas.width && ballSpeedX > 0.0) { // right
-        ballSpeedX *= -1;
+    if(keyHeld_Reverse){
+        carSpeed -= REVERSE_POWER;
     }
-    if(ballY < 0 && ballSpeedY < 0.0) { // top
-        ballSpeedY *= -1;
+    if(keyHeld_TurnLeft){
+        carAng -= TURN_RATE;
     }
-    if(ballY > canvas.height) { // bottom
-        ballReset();
-        trackReset();
+    if(keyHeld_TurnRight){
+        carAng += TURN_RATE;
     }
+
+    carX += Math.cos(carAng) * carSpeed;
+    carY += Math.sin(carAng) * carSpeed;
 }
 
-function isTrackAtColRow(col, row) {
+function isWallAtColRow(col, row) {
     if(col >= 0 && col < TRACK_COLS &&
         row >= 0 && row < TRACK_ROWS) {
          var trackIndexUnderCoord = rowColToArrayIndex(col, row);
@@ -112,50 +163,26 @@ function isTrackAtColRow(col, row) {
     }
 }
 
-function ballTrackHandling() {
-    var ballTrackCol = Math.floor(ballX / TRACK_W);
-    var ballTrackRow = Math.floor(ballY / TRACK_H);
-    var trackIndexUnderBall = rowColToArrayIndex(ballTrackCol, ballTrackRow);
+function carTrackHandling() {
+    var carTrackCol = Math.floor(carX / TRACK_W);
+    var carTrackRow = Math.floor(carY / TRACK_H);
+    var trackIndexUnderCar = rowColToArrayIndex(carTrackCol, carTrackRow);
 
-    if(ballTrackCol >= 0 && ballTrackCol < TRACK_COLS &&
-        ballTrackRow >= 0 && ballTrackRow < TRACK_ROWS) {
+    if(carTrackCol >= 0 && carTrackCol < TRACK_COLS &&
+        carTrackRow >= 0 && carTrackRow < TRACK_ROWS) {
 
-        if(isTrackAtColRow( ballTrackCol,ballTrackRow )) {
-            // console.log(tracksLeft);
-
-            var prevBallX = ballX - ballSpeedX;
-            var prevBallY = ballY - ballSpeedY;
-            var prevTrackCol = Math.floor(prevBallX / TRACK_W);
-            var prevTrackRow = Math.floor(prevBallY / TRACK_H);
-
-            var bothTestsFailed = true;
-
-            if(prevTrackCol != ballTrackCol) {
-                if(isTrackAtColRow(prevTrackCol, ballTrackRow) == false) {
-                    ballSpeedX *= -1;
-                    bothTestsFailed = false;
-                }
-            }
-            if(prevTrackRow != ballTrackRow) {
-                if(isTrackAtColRow(ballTrackCol, prevTrackRow) == false) {
-                    ballSpeedY *= -1;
-                    bothTestsFailed = false;
-                }
-            }
-
-            if(bothTestsFailed) { // armpit case, prevents ball from going through
-                ballSpeedX *= -1;
-                ballSpeedY *= -1;
-            }
-
-        } // end of track found
-    } // end of valid col and row
-} // end of ballTrackHandling func
+        if(isWallAtColRow( carTrackCol,carTrackRow )) {
+            carX -= Math.cos(carAng) * carSpeed;
+            carY -= Math.sin(carAng) * carSpeed;
+            carSpeed *= -0.5;
+        }
+    }
+}
 
 function moveAll() {
-    // ballMove();
+    carMove();
 
-    ballTrackHandling();
+    carTrackHandling();
 }
 
 function rowColToArrayIndex(col, row) {
@@ -169,7 +196,7 @@ function drawTracks() {
 
             var arrayIndex = rowColToArrayIndex(eachCol, eachRow);
 
-            if(trackGrid[arrayIndex] == 1) {
+            if(trackGrid[arrayIndex] == TRACK_WALL) {
                 colorRect(TRACK_W*eachCol,TRACK_H*eachRow,
                     TRACK_W-TRACK_GAP,TRACK_H-TRACK_GAP, 'blue');
             } // end of is this track here
@@ -181,14 +208,20 @@ function drawTracks() {
 function drawAll() {
     colorRect(0,0, canvas.width,canvas.height, 'black'); // clear screen
 
-    // colorCircle(ballX,ballY, 10, 'white'); // draw ball
-    if(carPicLoaded){
-        canvasContext.drawImage(carPic,
-            ballX - carPic.width/2,
-            ballY - carPic.height/2);
+    //colorCircle(carX,carY, 10, 'white'); // draw car
+    if(carPicLoaded) {
+        drawBitmapCenteredWithRotation(carPic, carX,carY, carAng);
     }
 
     drawTracks();
+}
+
+function drawBitmapCenteredWithRotation(useBitmap, atX,atY, withAng) {
+    canvasContext.save();
+    canvasContext.translate(atX, atY);
+    canvasContext.rotate(withAng);
+    canvasContext.drawImage(useBitmap, -useBitmap.width/2, -useBitmap.height/2);
+    canvasContext.restore();
 }
 
 function colorRect(topLeftX,topLeftY, boxWidth,boxHeight, fillColor) {
@@ -207,4 +240,5 @@ function colorText(showWords, textX,textY, fillColor) {
     canvasContext.fillStyle = fillColor;
     canvasContext.fillText(showWords, textX, textY);
 }
+
 
