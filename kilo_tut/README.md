@@ -1,1 +1,1 @@
-Heavily-annotated source from reading snaptoken's kilo tutorial.
+Annotated source from reading snaptoken's kilo tutorial.
